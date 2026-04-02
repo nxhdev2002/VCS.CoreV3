@@ -1,0 +1,6 @@
+@VCS.CoreV3_HostAddress = http://localhost:5159
+
+GET {{VCS.CoreV3_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
