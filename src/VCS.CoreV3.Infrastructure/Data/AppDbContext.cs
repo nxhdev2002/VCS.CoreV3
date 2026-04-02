@@ -24,9 +24,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasKey(x => x.Id);
             entity.Property(x => x.EventType).HasMaxLength(200);
             entity.Property(x => x.CorrelationId).HasMaxLength(120);
+            entity.Property(x => x.LockToken).HasMaxLength(64);
             entity.Property(x => x.Payload).HasColumnType("jsonb");
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.ProcessedAtUtc);
+            entity.HasIndex(x => new { x.ProcessedAtUtc, x.LockedAtUtc, x.CreatedAtUtc });
         });
     }
 }
