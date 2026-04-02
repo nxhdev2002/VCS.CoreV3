@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="VCS.CoreV3.csproj" />
+  <Project Path="src/VCS.CoreV3.Domain/VCS.CoreV3.Domain.csproj" />
+  <Project Path="src/VCS.CoreV3.Ports/VCS.CoreV3.Ports.csproj" />
+  <Folder Name="/src/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/VCS.CoreV3.Application.Tests/VCS.CoreV3.Application.Tests.csproj" />
+  </Folder>
+  <Project Path="src/VCS.CoreV3.Application/VCS.CoreV3.Application.csproj" />
+  <Project Path="src/VCS.CoreV3.Infrastructure/VCS.CoreV3.Infrastructure.csproj" />
+</Solution>

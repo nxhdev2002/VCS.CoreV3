@@ -1,0 +1,48 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+out/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Logs and test artifacts
+*.log
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Publish artifacts
+publish/
+artifacts/
+
+# Rider / ReSharper
+.idea/
+_ReSharper*/
+*.DotSettings.user
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*
+
+# Optional local app settings override
+appsettings.Local.json
+appsettings.*.local.json
