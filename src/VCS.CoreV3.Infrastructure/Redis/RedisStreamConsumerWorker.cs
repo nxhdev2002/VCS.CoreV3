@@ -109,6 +109,9 @@ public sealed class RedisStreamConsumerWorker : BackgroundService
                 case EventTypes.WeatherForecastGenerated:
                     await DispatchAsync<WeatherForecastGeneratedEvent>(entry, cancellationToken).ConfigureAwait(false);
                     break;
+                case EventTypes.ApiKeyCreated:
+                    await DispatchAsync<ApiKeyCreatedEvent>(entry, cancellationToken).ConfigureAwait(false);
+                    break;
                 default:
                     _logger.LogWarning("Skipping unsupported event type {EventType} for streamId={StreamId}", eventType, entry.Id);
                     break;

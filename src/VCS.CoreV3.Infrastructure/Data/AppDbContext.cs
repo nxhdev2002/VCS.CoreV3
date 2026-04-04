@@ -21,7 +21,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         modelBuilder.Entity<OutboxMessageEntity>(entity =>
         {
-            entity.ToTable("OutboxEvents");
+            entity.ToTable("outbox_events");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.EventType).HasMaxLength(200);
             entity.Property(x => x.CorrelationId).HasMaxLength(120);

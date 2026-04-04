@@ -100,6 +100,7 @@ public sealed class ApiKeyAuthMiddlewareTests
         public Task<ApiKeyEntity?> GetByKeyHashAsync(string keyHash) => Task.FromResult(result);
         public Task<bool> RevokeAsync(Guid id) => Task.FromResult(false);
         public Task<bool> UpdateRateLimitAsync(Guid id, int newRateLimit) => Task.FromResult(false);
+        public Task CreateAsync(ApiKeyEntity entity, CancellationToken ct = default) => Task.CompletedTask;
     }
 
     private sealed class CapturingApiKeyRepository(Action<string> capture) : IApiKeyRepository
@@ -112,5 +113,6 @@ public sealed class ApiKeyAuthMiddlewareTests
 
         public Task<bool> RevokeAsync(Guid id) => Task.FromResult(false);
         public Task<bool> UpdateRateLimitAsync(Guid id, int newRateLimit) => Task.FromResult(false);
+        public Task CreateAsync(ApiKeyEntity entity, CancellationToken ct = default) => Task.CompletedTask;
     }
 }
