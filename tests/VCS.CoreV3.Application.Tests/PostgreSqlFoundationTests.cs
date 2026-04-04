@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 using VCS.CoreV3.Domain;
 using VCS.CoreV3.Infrastructure;
 using VCS.CoreV3.Infrastructure.Data;
-using VCS.CoreV3.Infrastructure.Data.Entities;
 using VCS.CoreV3.Infrastructure.Redis;
 using VCS.CoreV3.Ports;
+using VCS.CoreV3.Domain.Entities;
 
 namespace VCS.CoreV3.Application.Tests;
 

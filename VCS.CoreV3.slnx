@@ -5,6 +5,7 @@
   <Folder Name="/src/" />
   <Folder Name="/tests/">
     <Project Path="tests/VCS.CoreV3.Application.Tests/VCS.CoreV3.Application.Tests.csproj" />
+    <Project Path="tests/VCS.CoreV3.Infrastructure.Tests/VCS.CoreV3.Infrastructure.Tests.csproj" />
   </Folder>
   <Project Path="src/VCS.CoreV3.Application/VCS.CoreV3.Application.csproj" />
   <Project Path="src/VCS.CoreV3.Infrastructure/VCS.CoreV3.Infrastructure.csproj" />

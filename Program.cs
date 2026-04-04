@@ -16,6 +16,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ApiKeyAuthMiddleware>();
 
 app.MapWeatherForecastEndpoint();
 app.MapHealthChecks("/health");

@@ -43,6 +43,9 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<RedisStreamConsumerWorker>();
         services.AddHostedService<OutboxDispatcherWorker>();
 
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+        services.AddScoped<IApiKeyRepository, PostgresApiKeyRepository>();
         services.AddScoped<ICorrelationContextAccessor, CorrelationContextAccessor>();
         services.AddScoped<IGetWeatherForecastUseCase, GetWeatherForecastUseCase>();
         services.AddScoped<IWeatherForecastRepository, PostgresWeatherForecastRepository>();

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VCS.CoreV3.Domain;
-using VCS.CoreV3.Infrastructure.Data.Entities;
+using VCS.CoreV3.Domain.Entities;
 using VCS.CoreV3.Ports;
 
 namespace VCS.CoreV3.Infrastructure.Data;
