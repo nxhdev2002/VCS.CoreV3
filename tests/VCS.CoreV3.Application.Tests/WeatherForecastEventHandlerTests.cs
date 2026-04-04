@@ -293,7 +293,7 @@ public sealed class ApiKeyCreatedEventEndToEndTests
         finally
         {
             await db.KeyDeleteAsync(streamName);
-            redis.Dispose();
+            await redis.DisposeAsync();
         }
     }
 
