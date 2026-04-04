@@ -83,7 +83,7 @@ public sealed class OutboxDispatcher(
             .FromSqlInterpolated($@"
                 WITH candidates AS (
                     SELECT ""Id""
-                    FROM ""OutboxEvents""
+                    FROM ""outbox_events""
                     WHERE ""ProcessedAtUtc"" IS NULL
                       AND ""RetryCount"" < {_options.MaxRetries}
                       AND (""LockedAtUtc"" IS NULL OR ""LockedAtUtc"" < {lockExpiryUtc})
@@ -91,7 +91,7 @@ public sealed class OutboxDispatcher(
                     LIMIT {_options.BatchSize}
                     FOR UPDATE SKIP LOCKED
                 )
-                UPDATE ""OutboxEvents"" AS o
+                UPDATE ""outbox_events"" AS o
                 SET ""LockedAtUtc"" = {nowUtc},
                     ""LockToken"" = {lockToken}
                 FROM candidates

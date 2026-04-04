@@ -130,7 +130,7 @@ public sealed class ApiKeyCreatedEventHandlerTests
         var saved = await dbContext.ApiKeys.SingleAsync();
         Assert.Equal(userId, saved.UserId);
         Assert.Equal("free", saved.Plan);
-        Assert.Equal(100, saved.RateLimit);
+        Assert.Equal(ApiKeyDefaults.DefaultFreeRateLimit, saved.RateLimit);
         Assert.Equal(64, saved.KeyHash.Length);
         Assert.False(saved.IsRevoked);
         Assert.Null(saved.ExpiredAt);
@@ -281,7 +281,7 @@ public sealed class ApiKeyCreatedEventEndToEndTests
             var saved = await assertDb.ApiKeys.SingleAsync();
             Assert.Equal(userId, saved.UserId);
             Assert.Equal("free", saved.Plan);
-            Assert.Equal(100, saved.RateLimit);
+            Assert.Equal(ApiKeyDefaults.DefaultFreeRateLimit, saved.RateLimit);
             Assert.Equal(64, saved.KeyHash.Length);
             Assert.False(saved.IsRevoked);
             Assert.Null(saved.ExpiredAt);

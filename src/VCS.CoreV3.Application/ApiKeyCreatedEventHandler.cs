@@ -35,7 +35,7 @@ public sealed class ApiKeyCreatedEventHandler : IIntegrationEventHandler<ApiKeyC
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             Plan = "free",
-            RateLimit = 100
+            RateLimit = ApiKeyDefaults.DefaultFreeRateLimit
         };
 
         await _apiKeyRepository.CreateAsync(entity, cancellationToken);
