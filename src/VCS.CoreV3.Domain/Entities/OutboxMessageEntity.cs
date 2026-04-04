@@ -1,4 +1,4 @@
-namespace VCS.CoreV3.Infrastructure.Data.Entities;
+namespace VCS.CoreV3.Domain.Entities;
 
 public sealed class OutboxMessageEntity
 {

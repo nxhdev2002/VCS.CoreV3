@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using VCS.CoreV3.Infrastructure.Data.Entities;
+using VCS.CoreV3.Domain.Entities;
 
 namespace VCS.CoreV3.Infrastructure.Data;
 
@@ -7,6 +7,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<WeatherForecastEntity> WeatherForecasts => Set<WeatherForecastEntity>();
     public DbSet<OutboxMessageEntity> OutboxMessages => Set<OutboxMessageEntity>();
+    public DbSet<ApiKeyEntity> ApiKeys => Set<ApiKeyEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +30,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasIndex(x => x.CreatedAtUtc);
             entity.HasIndex(x => x.ProcessedAtUtc);
             entity.HasIndex(x => new { x.ProcessedAtUtc, x.LockedAtUtc, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<ApiKeyEntity>(entity =>
+        {
+            entity.ToTable("api_keys");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.KeyHash).IsRequired().HasMaxLength(256);
+            entity.Property(x => x.Plan).HasMaxLength(100).HasDefaultValue("free");
+            entity.Property(x => x.RateLimit).HasDefaultValue(1000);
+            entity.Property(x => x.IsRevoked).HasDefaultValue(false);
+            entity.Property(x => x.CreatedAt).IsRequired();
+            entity.Property(x => x.UpdatedAt).IsRequired();
+            entity.HasIndex(x => x.KeyHash).IsUnique();
+            entity.HasIndex(x => new { x.KeyHash, x.ExpiredAt, x.IsRevoked });
         });
     }
 }

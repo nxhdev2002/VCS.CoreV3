@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using VCS.CoreV3.Infrastructure.Data.Entities;
+using VCS.CoreV3.Domain.Entities;
 using VCS.CoreV3.Ports;
 
 namespace VCS.CoreV3.Infrastructure.Data;
