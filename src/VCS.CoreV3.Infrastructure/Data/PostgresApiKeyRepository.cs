@@ -38,5 +38,11 @@ namespace VCS.CoreV3.Infrastructure.Data
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task CreateAsync(ApiKeyEntity entity, CancellationToken ct = default)
+        {
+            _db.ApiKeys.Add(entity);
+            await _db.SaveChangesAsync(ct);
+        }
     }
 }

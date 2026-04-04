@@ -9,5 +9,6 @@ namespace VCS.CoreV3.Ports
         Task<ApiKeyEntity?> GetByKeyHashAsync(string keyHash);
         Task<bool> RevokeAsync(Guid id);
         Task<bool> UpdateRateLimitAsync(Guid id, int newRateLimit);
+        Task CreateAsync(ApiKeyEntity entity, CancellationToken ct = default);
     }
 }

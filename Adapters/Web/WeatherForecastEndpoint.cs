@@ -1,3 +1,4 @@
+using Microsoft.OpenApi;
 using VCS.CoreV3.Ports;
 
 namespace VCS.CoreV3.Adapters.Web;
@@ -31,6 +32,10 @@ internal static class WeatherForecastEndpoint
             var forecasts = await useCase.ExecuteAsync();
             return Results.Ok(forecasts);
         })
-        .WithName("GetWeatherForecast");
+        .WithName("GetWeatherForecast")
+        .WithTags("WeatherForecast")
+        .WithSummary("Get weather forecasts")
+        .WithDescription("Returns a list of weather forecasts. Requires a valid API key in the X-Api-Key header.")
+       ;
     }
 }
