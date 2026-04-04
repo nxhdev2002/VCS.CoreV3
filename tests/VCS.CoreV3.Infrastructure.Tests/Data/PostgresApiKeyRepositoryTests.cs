@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using VCS.CoreV3.Infrastructure;
 using VCS.CoreV3.Infrastructure.Data;
 using VCS.CoreV3.Domain.Entities;
 using Xunit;
@@ -9,12 +10,12 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
 {
     public class PostgresApiKeyRepositoryTests
     {
-        private AppDbContext CreateDbContext()
+        private static AppDbContext CreateDbContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
-            return new AppDbContext(options);
+            return new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
         }
 
         [Fact]
@@ -27,12 +28,10 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
                 Id = Guid.NewGuid(),
                 KeyHash = "hash1",
                 UserId = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 IsRevoked = false,
                 ExpiredAt = null,
                 Plan = "free",
                 RateLimit = 1000,
-                UpdatedAt = DateTime.UtcNow
             };
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();
@@ -52,12 +51,10 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
                 Id = Guid.NewGuid(),
                 KeyHash = "hash2",
                 UserId = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 IsRevoked = true,
                 ExpiredAt = null,
                 Plan = "free",
                 RateLimit = 1000,
-                UpdatedAt = DateTime.UtcNow
             };
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();
@@ -76,12 +73,10 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
                 Id = Guid.NewGuid(),
                 KeyHash = "hash3",
                 UserId = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow.AddDays(-10),
                 IsRevoked = false,
                 ExpiredAt = DateTime.UtcNow.AddDays(-1),
                 Plan = "free",
                 RateLimit = 1000,
-                UpdatedAt = DateTime.UtcNow
             };
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();
@@ -100,12 +95,10 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
                 Id = Guid.NewGuid(),
                 KeyHash = "hash4",
                 UserId = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 IsRevoked = false,
                 ExpiredAt = null,
                 Plan = "free",
                 RateLimit = 1000,
-                UpdatedAt = DateTime.UtcNow
             };
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();
@@ -126,12 +119,10 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
                 Id = Guid.NewGuid(),
                 KeyHash = "hash5",
                 UserId = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
                 IsRevoked = false,
                 ExpiredAt = null,
                 Plan = "free",
                 RateLimit = 1000,
-                UpdatedAt = DateTime.UtcNow
             };
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();

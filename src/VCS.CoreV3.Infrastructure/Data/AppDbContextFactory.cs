@@ -24,7 +24,7 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
 
-        return new AppDbContext(optionsBuilder.Options);
+        return new AppDbContext(optionsBuilder.Options, new NullCurrentUser(), TimeProvider.System);
     }
 
     private static string? FindAppsettingsDirectory(string start)

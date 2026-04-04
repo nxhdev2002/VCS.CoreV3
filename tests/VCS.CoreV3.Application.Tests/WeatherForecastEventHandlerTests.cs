@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using VCS.CoreV3.Domain.Entities;
+using VCS.CoreV3.Infrastructure;
 using VCS.CoreV3.Infrastructure.Data;
 using VCS.CoreV3.Infrastructure.Redis;
 using VCS.CoreV3.Ports;
@@ -134,7 +135,7 @@ public sealed class ApiKeyCreatedEventHandlerTests
         Assert.Equal(64, saved.KeyHash.Length);
         Assert.False(saved.IsRevoked);
         Assert.Null(saved.ExpiredAt);
-        Assert.True(saved.CreatedAt <= DateTime.UtcNow);
+        Assert.True(saved.CreationTime <= DateTime.UtcNow);
     }
 
     [Fact]
@@ -173,7 +174,7 @@ public sealed class ApiKeyCreatedEventHandlerTests
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
             .Options;
-        return new AppDbContext(options);
+        return new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
     }
 
     private sealed class CapturingApiKeyRepository : IApiKeyRepository

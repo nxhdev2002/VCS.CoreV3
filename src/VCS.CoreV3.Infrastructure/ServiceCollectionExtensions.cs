@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using StackExchange.Redis;
 using VCS.CoreV3.Application;
 using VCS.CoreV3.Infrastructure.Data;
+using VCS.CoreV3.Infrastructure.InternalService;
 using VCS.CoreV3.Infrastructure.Redis;
 using VCS.CoreV3.Ports;
 
@@ -25,6 +26,8 @@ public static class ServiceCollectionExtensions
         {
             options.UseNpgsql(postgresConnectionString);
         });
+
+        services.AddSingleton(TimeProvider.System);
 
         services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
         services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
@@ -56,6 +59,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IIntegrationEventHandler<WeatherForecastGeneratedEvent>, WeatherForecastGeneratedEventHandler>();
         services.AddScoped<IIntegrationEventHandler<ApiKeyCreatedEvent>, ApiKeyCreatedEventHandler>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddInternalApiAuth(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<InternalApiOptions>(configuration.GetSection(InternalApiOptions.SectionName));
+        services.AddSingleton<IInternalServiceKeyValidator, InternalServiceKeyValidator>();
         return services;
     }
 

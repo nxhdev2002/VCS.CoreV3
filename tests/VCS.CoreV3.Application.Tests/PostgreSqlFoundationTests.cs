@@ -326,7 +326,7 @@ public sealed class PostgreSqlFoundationTests
             .UseNpgsql(connectionString)
             .Options;
 
-        await using var setupContext = new AppDbContext(options);
+        await using var setupContext = new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
         await setupContext.Database.EnsureDeletedAsync();
         await setupContext.Database.EnsureCreatedAsync();
 
@@ -359,7 +359,7 @@ public sealed class PostgreSqlFoundationTests
 
             async Task<int> DispatchWithNewContextAsync()
             {
-                await using var context = new AppDbContext(options);
+                await using var context = new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
                 var dispatcher = new OutboxDispatcher(
                     context,
                     publisher,
@@ -377,7 +377,7 @@ public sealed class PostgreSqlFoundationTests
             Assert.Equal(1, results.Sum());
             Assert.Equal(1, publisher.PublishedCount);
 
-            await using var assertContext = new AppDbContext(options);
+            await using var assertContext = new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
             var saved = await assertContext.OutboxMessages.SingleAsync();
             Assert.NotNull(saved.ProcessedAtUtc);
             Assert.Equal(0, saved.RetryCount);
@@ -395,7 +395,7 @@ public sealed class PostgreSqlFoundationTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
             .Options;
 
-        return new AppDbContext(options);
+        return new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
     }
 
     private static string? GetPostgreSqlIntegrationConnectionString()

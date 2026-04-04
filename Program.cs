@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApiService(builder.Configuration);
 builder.Services.AddHexagonalArchitecture(builder.Configuration);
+builder.Services.AddInternalApiAuth(builder.Configuration);
 builder.Services.AddHealthChecks().AddCheck<RedisHealthCheck>("redis");
 
 var app = builder.Build();
@@ -14,10 +15,10 @@ var app = builder.Build();
 app.MapOpenApi();
 app.MapScalarApiReference(options => options
     .WithTitle("VCS CoreV3 API")
-    .AddPreferredSecuritySchemes("ApiKey")
-    .AddApiKeyAuthentication("ApiKey", apiKey =>
+    .WithPreferredScheme("ApiKey")
+    .WithApiKeyAuthentication(apiKey =>
     {
-        apiKey.Value = string.Empty;
+        apiKey.Token = string.Empty;
     })
 );
 
