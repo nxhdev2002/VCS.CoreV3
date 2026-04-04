@@ -115,5 +115,43 @@ namespace VCS.CoreV3.Infrastructure.Tests.Data
             var updated = await db.ApiKeys.FindAsync(key.Id);
             Assert.True(updated!.IsRevoked);
         }
+
+        [Fact]
+        public async Task UpdateRateLimitAsync_Updates_RateLimit_And_Returns_True()
+        {
+            var db = CreateDbContext();
+            var repo = new PostgresApiKeyRepository(db);
+            var key = new ApiKeyEntity
+            {
+                Id = Guid.NewGuid(),
+                KeyHash = "hash5",
+                UserId = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false,
+                ExpiredAt = null,
+                Plan = "free",
+                RateLimit = 1000,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.ApiKeys.Add(key);
+            await db.SaveChangesAsync();
+
+            var result = await repo.UpdateRateLimitAsync(key.Id, 9999);
+
+            Assert.True(result);
+            var updated = await db.ApiKeys.FindAsync(key.Id);
+            Assert.Equal(9999, updated!.RateLimit);
+        }
+
+        [Fact]
+        public async Task UpdateRateLimitAsync_Returns_False_WhenKeyNotFound()
+        {
+            var db = CreateDbContext();
+            var repo = new PostgresApiKeyRepository(db);
+
+            var result = await repo.UpdateRateLimitAsync(Guid.NewGuid(), 500);
+
+            Assert.False(result);
+        }
     }
 }

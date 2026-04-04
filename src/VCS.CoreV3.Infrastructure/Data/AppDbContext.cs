@@ -42,7 +42,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.IsRevoked).HasDefaultValue(false);
             entity.Property(x => x.CreatedAt).IsRequired();
             entity.Property(x => x.UpdatedAt).IsRequired();
-            entity.HasIndex(x => x.KeyHash);
+            entity.HasIndex(x => x.KeyHash).IsUnique();
             entity.HasIndex(x => new { x.KeyHash, x.ExpiredAt, x.IsRevoked });
         });
     }
