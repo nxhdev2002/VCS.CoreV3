@@ -24,7 +24,6 @@ namespace VCS.CoreV3.Infrastructure.Data
             var entity = await _db.ApiKeys.FindAsync(id);
             if (entity == null) return false;
             entity.IsRevoked = true;
-            entity.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }
@@ -34,7 +33,6 @@ namespace VCS.CoreV3.Infrastructure.Data
             var entity = await _db.ApiKeys.FindAsync(id);
             if (entity == null) return false;
             entity.RateLimit = newRateLimit;
-            entity.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }

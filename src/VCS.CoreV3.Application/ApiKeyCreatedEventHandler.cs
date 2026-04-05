@@ -32,8 +32,6 @@ public sealed class ApiKeyCreatedEventHandler : IIntegrationEventHandler<ApiKeyC
             Id = Guid.NewGuid(),
             KeyHash = keyHash,
             UserId = userId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             Plan = "free",
             RateLimit = ApiKeyDefaults.DefaultFreeRateLimit
         };
