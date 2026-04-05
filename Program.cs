@@ -26,6 +26,7 @@ app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyAuthMiddleware>();
 
 app.MapWeatherForecastEndpoint();
+app.MapApiKeyEndpoint();
 app.MapHealthChecks("/health");
 
 await app.RunAsync();

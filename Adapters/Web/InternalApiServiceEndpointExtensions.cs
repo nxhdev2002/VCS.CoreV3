@@ -6,6 +6,7 @@ public static class InternalApiServiceEndpointExtensions
     {
         return builder
             .AddEndpointFilter<InternalApiServiceFilter>()
-            .WithMetadata(new InternalApiServiceAttribute());
+            .WithMetadata(new InternalApiServiceAttribute())
+            .ExcludeFromDescription();
     }
 }

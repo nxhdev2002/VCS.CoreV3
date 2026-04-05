@@ -53,78 +53,34 @@ public sealed class WeatherForecastEventHandlerTests
 
 public sealed class ApiKeyCreatedEventHandlerTests
 {
-    // --- unit tests (in-memory stub) ---
-
     [Fact]
     public void Handler_ExposesCorrectEventType()
     {
-        var sut = CreateHandler(new CapturingApiKeyRepository());
+        var sut = new ApiKeyCreatedEventHandler(new StubCreateApiKeyUseCase());
 
         Assert.Equal(EventTypes.ApiKeyCreated, sut.EventType);
     }
 
     [Fact]
-    public async Task HandleAsync_CreatesApiKey_WithCorrectUserId()
+    public async Task HandleAsync_DelegatesToUseCase_WithParsedUserId()
     {
         var userId = Guid.NewGuid();
-        var repo = new CapturingApiKeyRepository();
-        var sut = CreateHandler(repo);
+        var stub = new StubCreateApiKeyUseCase();
+        var sut = new ApiKeyCreatedEventHandler(stub);
 
         await sut.HandleAsync(BuildEnvelope(userId.ToString()));
 
-        Assert.Single(repo.Created);
-        Assert.Equal(userId, repo.Created[0].UserId);
+        Assert.Equal(userId, stub.ReceivedUserId);
     }
 
-    [Fact]
-    public async Task HandleAsync_CreatesApiKey_WithFreeDefaults()
-    {
-        var repo = new CapturingApiKeyRepository();
-        var sut = CreateHandler(repo);
-
-        await sut.HandleAsync(BuildEnvelope(Guid.NewGuid().ToString()));
-
-        var entity = repo.Created[0];
-        Assert.Equal("free", entity.Plan);
-        Assert.Equal(100, entity.RateLimit);
-        Assert.False(entity.IsRevoked);
-        Assert.Null(entity.ExpiredAt);
-    }
-
-    [Fact]
-    public async Task HandleAsync_CreatesApiKey_WithValidSha256KeyHash()
-    {
-        var repo = new CapturingApiKeyRepository();
-        var sut = CreateHandler(repo);
-
-        await sut.HandleAsync(BuildEnvelope(Guid.NewGuid().ToString()));
-
-        var keyHash = repo.Created[0].KeyHash;
-        Assert.Equal(64, keyHash.Length);
-        Assert.Matches("^[0-9a-f]{64}$", keyHash);
-    }
-
-    [Fact]
-    public async Task HandleAsync_GeneratesUniqueIdAndKeyHashPerCall()
-    {
-        var repo = new CapturingApiKeyRepository();
-        var sut = CreateHandler(repo);
-
-        await sut.HandleAsync(BuildEnvelope(Guid.NewGuid().ToString()));
-        await sut.HandleAsync(BuildEnvelope(Guid.NewGuid().ToString()));
-
-        Assert.NotEqual(repo.Created[0].Id, repo.Created[1].Id);
-        Assert.NotEqual(repo.Created[0].KeyHash, repo.Created[1].KeyHash);
-    }
-
-    // --- integration tests (PostgresApiKeyRepository + EF InMemory) ---
+    // --- integration tests (through CreateApiKeyUseCase + PostgresApiKeyRepository + EF InMemory) ---
 
     [Fact]
     public async Task HandleAsync_PersistsApiKeyRow_ToDatabase()
     {
         var userId = Guid.NewGuid();
         await using var dbContext = CreateDbContext();
-        var sut = CreateHandler(new PostgresApiKeyRepository(dbContext));
+        var sut = CreateHandlerWithRealUseCase(new PostgresApiKeyRepository(dbContext));
 
         await sut.HandleAsync(BuildEnvelope(userId.ToString()));
 
@@ -143,7 +99,7 @@ public sealed class ApiKeyCreatedEventHandlerTests
     {
         await using var dbContext = CreateDbContext();
         var repo = new PostgresApiKeyRepository(dbContext);
-        var sut = CreateHandler(repo);
+        var sut = CreateHandlerWithRealUseCase(repo);
 
         await sut.HandleAsync(BuildEnvelope(Guid.NewGuid().ToString()));
 
@@ -156,8 +112,8 @@ public sealed class ApiKeyCreatedEventHandlerTests
 
     // --- helpers ---
 
-    private static ApiKeyCreatedEventHandler CreateHandler(IApiKeyRepository repo)
-        => new(repo, NullLogger<ApiKeyCreatedEventHandler>.Instance);
+    private static ApiKeyCreatedEventHandler CreateHandlerWithRealUseCase(IApiKeyRepository repo)
+        => new(new CreateApiKeyUseCase(repo, NullLogger<CreateApiKeyUseCase>.Instance));
 
     private static IntegrationEventEnvelope<ApiKeyCreatedEvent> BuildEnvelope(string userId)
         => new(
@@ -177,19 +133,15 @@ public sealed class ApiKeyCreatedEventHandlerTests
         return new AppDbContext(options, new NullCurrentUser(), TimeProvider.System);
     }
 
-    private sealed class CapturingApiKeyRepository : IApiKeyRepository
+    private sealed class StubCreateApiKeyUseCase : ICreateApiKeyUseCase
     {
-        public List<ApiKeyEntity> Created { get; } = new();
+        public Guid ReceivedUserId { get; private set; }
 
-        public Task CreateAsync(ApiKeyEntity entity, CancellationToken ct = default)
+        public Task<CreateApiKeyResult> ExecuteAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            Created.Add(entity);
-            return Task.CompletedTask;
+            ReceivedUserId = userId;
+            return Task.FromResult(new CreateApiKeyResult(Guid.NewGuid(), "rawkey", userId, "free", ApiKeyDefaults.DefaultFreeRateLimit));
         }
-
-        public Task<ApiKeyEntity?> GetByKeyHashAsync(string keyHash) => Task.FromResult<ApiKeyEntity?>(null);
-        public Task<bool> RevokeAsync(Guid id) => Task.FromResult(false);
-        public Task<bool> UpdateRateLimitAsync(Guid id, int newRateLimit) => Task.FromResult(false);
     }
 }
 
@@ -239,6 +191,7 @@ public sealed class ApiKeyCreatedEventEndToEndTests
             services.AddSingleton<IIntegrationEventSerializer>(serializer);
             services.AddDbContext<AppDbContext>(opts => opts.UseInMemoryDatabase(sharedDbName));
             services.AddScoped<IApiKeyRepository, PostgresApiKeyRepository>();
+            services.AddScoped<ICreateApiKeyUseCase, CreateApiKeyUseCase>();
             services.AddScoped<IIntegrationEventHandler<ApiKeyCreatedEvent>, ApiKeyCreatedEventHandler>();
             services.AddLogging(b => b.ClearProviders());
 
