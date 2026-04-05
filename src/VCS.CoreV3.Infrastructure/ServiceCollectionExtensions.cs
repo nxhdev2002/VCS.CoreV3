@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApiKeyRepository, PostgresApiKeyRepository>();
         services.AddScoped<ICorrelationContextAccessor, CorrelationContextAccessor>();
         services.AddScoped<IGetWeatherForecastUseCase, GetWeatherForecastUseCase>();
+        services.AddScoped<ICreateApiKeyUseCase, CreateApiKeyUseCase>();
         services.AddScoped<IWeatherForecastRepository, PostgresWeatherForecastRepository>();
         services.AddScoped<IOutboxStore, EfOutboxStore>();
         services.AddScoped<IIntegrationUnitOfWork, EfIntegrationUnitOfWork>();
