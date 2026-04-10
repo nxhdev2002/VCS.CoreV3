@@ -155,7 +155,8 @@ public sealed class PostgreSqlFoundationTests
         var transportPublisher = services.Single(x => x.ServiceType == typeof(IOutboxTransportPublisher));
 
         Assert.Equal(typeof(OutboxIntegrationEventPublisher), appPublisher.ImplementationType);
-        Assert.Equal(typeof(RedisStreamEventPublisher), transportPublisher.ImplementationType);
+        // IOutboxTransportPublisher is now a factory-registered CompositeOutboxTransportPublisher (Kafka + Redis)
+        Assert.NotNull(transportPublisher.ImplementationFactory);
     }
 
     [Fact]

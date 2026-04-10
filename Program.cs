@@ -1,3 +1,4 @@
+using KafkaFlow;
 using Scalar.AspNetCore;
 using VCS.CoreV3.Adapters.Web;
 using VCS.CoreV3.Infrastructure;
@@ -29,4 +30,13 @@ app.MapWeatherForecastEndpoint();
 app.MapApiKeyEndpoint();
 app.MapHealthChecks("/health");
 
-await app.RunAsync();
+var kafkaBus = app.Services.CreateKafkaBus();
+await kafkaBus.StartAsync(app.Lifetime.ApplicationStopping);
+try
+{
+    await app.RunAsync();
+}
+finally
+{
+    await kafkaBus.StopAsync();
+}

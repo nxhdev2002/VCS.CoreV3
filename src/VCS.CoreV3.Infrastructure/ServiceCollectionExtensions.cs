@@ -3,10 +3,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
+using KafkaFlow;
+using KafkaFlow.Serializer;
+using KafkaFlow.TypedHandler;
 using StackExchange.Redis;
 using VCS.CoreV3.Application;
 using VCS.CoreV3.Infrastructure.Data;
 using VCS.CoreV3.Infrastructure.InternalService;
+using VCS.CoreV3.Infrastructure.Kafka;
 using VCS.CoreV3.Infrastructure.Redis;
 using VCS.CoreV3.Ports;
 
@@ -41,7 +45,57 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IIntegrationEventSerializer, SystemTextJsonIntegrationEventSerializer>();
         services.AddScoped<IOutboxMessageSerializer, SystemTextJsonOutboxMessageSerializer>();
-        services.AddSingleton<IOutboxTransportPublisher, RedisStreamEventPublisher>();
+
+        // Transport: Redis Streams (existing)
+        services.AddSingleton<RedisStreamEventPublisher>();
+
+        // Transport: KafkaFlow
+        services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
+        services.AddSingleton<KafkaFlowTransportPublisher>();
+
+        // Transport-specific dispatchers (keyed by transport name)
+        services.AddKeyedSingleton<IIntegrationEventDispatcher>("redis", (sp, _) =>
+            new IntegrationEventDispatcher(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<IIntegrationEventSerializer>(),
+                typeof(IRedisEvent)));
+        services.AddKeyedSingleton<IIntegrationEventDispatcher>("kafka", (sp, _) =>
+            new IntegrationEventDispatcher(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<IIntegrationEventSerializer>(),
+                typeof(IKafkaEvent)));
+
+        // Composite publisher — dual-publishes to both transports
+        services.AddSingleton<IOutboxTransportPublisher>(sp =>
+            new CompositeOutboxTransportPublisher(
+                sp.GetRequiredService<RedisStreamEventPublisher>(),
+                sp.GetRequiredService<KafkaFlowTransportPublisher>()));
+
+        // KafkaFlow cluster
+        services.AddKafka(kafka => kafka
+            .AddCluster(cluster =>
+            {
+                var kafkaOptions = configuration.GetSection(KafkaOptions.SectionName).Get<KafkaOptions>()
+                    ?? new KafkaOptions();
+
+                cluster
+                    .WithBrokers(kafkaOptions.Brokers)
+                    .AddProducer(kafkaOptions.ProducerName, producer => producer
+                        .DefaultTopic(kafkaOptions.Topic)
+                        .AddMiddlewares(middlewares => middlewares
+                            .AddSerializer<JsonCoreSerializer>()))
+                    .AddConsumer(consumer => consumer
+                        .Topic(kafkaOptions.Topic)
+                        .WithGroupId(kafkaOptions.ConsumerGroupId)
+                        .WithBufferSize(kafkaOptions.BufferSize)
+                        .WithWorkersCount(kafkaOptions.WorkersCount)
+                        .AddMiddlewares(middlewares => middlewares
+                            .AddDeserializer<JsonCoreDeserializer>()
+                            .AddTypedHandlers(handlers => handlers
+                                .WithHandlerLifetime(InstanceLifetime.Scoped)
+                                .AddHandler<KafkaIntegrationEventHandler>())));
+            }));
+
         services.AddScoped<IIntegrationEventPublisher, OutboxIntegrationEventPublisher>();
         services.AddScoped<IOutboxDispatcher, OutboxDispatcher>();
         services.AddHostedService<RedisStreamConsumerWorker>();
