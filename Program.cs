@@ -31,6 +31,12 @@ app.MapApiKeyEndpoint();
 app.MapHealthChecks("/health");
 
 var kafkaBus = app.Services.CreateKafkaBus();
-await kafkaBus.StartAsync();
-
-await app.RunAsync();
+await kafkaBus.StartAsync(app.Lifetime.ApplicationStopping);
+try
+{
+    await app.RunAsync();
+}
+finally
+{
+    await kafkaBus.StopAsync();
+}
