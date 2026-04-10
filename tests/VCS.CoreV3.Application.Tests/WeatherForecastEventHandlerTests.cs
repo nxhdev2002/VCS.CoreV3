@@ -7,6 +7,7 @@ using StackExchange.Redis;
 using VCS.CoreV3.Domain.Entities;
 using VCS.CoreV3.Infrastructure;
 using VCS.CoreV3.Infrastructure.Data;
+using VCS.CoreV3.Infrastructure.Kafka;
 using VCS.CoreV3.Infrastructure.Redis;
 using VCS.CoreV3.Ports;
 
@@ -208,10 +209,12 @@ public sealed class ApiKeyCreatedEventEndToEndTests
                 MaxStreamLength = 1000
             });
 
+            var dispatcher = new IntegrationEventDispatcher(
+                provider.GetRequiredService<IServiceScopeFactory>(),
+                serializer);
             var worker = new RedisStreamConsumerWorker(
                 redis,
-                serializer,
-                provider.GetRequiredService<IServiceScopeFactory>(),
+                dispatcher,
                 streamOptions,
                 NullLogger<RedisStreamConsumerWorker>.Instance);
 

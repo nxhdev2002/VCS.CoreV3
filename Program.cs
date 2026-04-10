@@ -1,3 +1,4 @@
+using KafkaFlow;
 using Scalar.AspNetCore;
 using VCS.CoreV3.Adapters.Web;
 using VCS.CoreV3.Infrastructure;
@@ -28,5 +29,8 @@ app.UseMiddleware<ApiKeyAuthMiddleware>();
 app.MapWeatherForecastEndpoint();
 app.MapApiKeyEndpoint();
 app.MapHealthChecks("/health");
+
+var kafkaBus = app.Services.CreateKafkaBus();
+await kafkaBus.StartAsync();
 
 await app.RunAsync();

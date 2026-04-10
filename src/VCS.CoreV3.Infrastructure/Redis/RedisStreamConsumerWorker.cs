@@ -1,9 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
-using VCS.CoreV3.Ports;
+using VCS.CoreV3.Infrastructure.Kafka;
 
 namespace VCS.CoreV3.Infrastructure.Redis;
 
@@ -18,22 +17,19 @@ public sealed class RedisStreamConsumerWorker : BackgroundService
     private const string PayloadField = "payload";
 
     private readonly IConnectionMultiplexer _connectionMultiplexer;
-    private readonly IIntegrationEventSerializer _serializer;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IIntegrationEventDispatcher _dispatcher;
     private readonly RedisStreamOptions _options;
     private readonly ILogger<RedisStreamConsumerWorker> _logger;
     private readonly string _consumerName;
 
     public RedisStreamConsumerWorker(
         IConnectionMultiplexer connectionMultiplexer,
-        IIntegrationEventSerializer serializer,
-        IServiceScopeFactory scopeFactory,
+        IIntegrationEventDispatcher dispatcher,
         IOptions<RedisStreamOptions> options,
         ILogger<RedisStreamConsumerWorker> logger)
     {
         _connectionMultiplexer = connectionMultiplexer;
-        _serializer = serializer;
-        _scopeFactory = scopeFactory;
+        _dispatcher = dispatcher;
         _options = options.Value;
         _logger = logger;
         _consumerName = $"{_options.ConsumerNamePrefix}-{Environment.MachineName}";
@@ -100,64 +96,25 @@ public sealed class RedisStreamConsumerWorker : BackgroundService
         try
         {
             var eventType = GetFieldValue(entry, EventTypeField);
+            var payload = GetFieldValue(entry, PayloadField);
+            var messageId = GetFieldValue(entry, MessageIdField);
+            var correlationId = GetFieldValue(entry, CorrelationIdField);
+            var schemaVersion = ParseInt(GetFieldValue(entry, SchemaVersionField));
+            var retryCount = ParseInt(GetFieldValue(entry, RetryCountField));
+            var occurredAtUtc = DateTime.Parse(
+                GetFieldValue(entry, OccurredAtUtcField),
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind);
 
-            switch (eventType)
-            {
-                case EventTypes.WeatherForecastRequested:
-                    await DispatchAsync<WeatherForecastRequestedEvent>(entry, cancellationToken).ConfigureAwait(false);
-                    break;
-                case EventTypes.WeatherForecastGenerated:
-                    await DispatchAsync<WeatherForecastGeneratedEvent>(entry, cancellationToken).ConfigureAwait(false);
-                    break;
-                case EventTypes.ApiKeyCreated:
-                    await DispatchAsync<ApiKeyCreatedEvent>(entry, cancellationToken).ConfigureAwait(false);
-                    break;
-                default:
-                    _logger.LogWarning("Skipping unsupported event type {EventType} for streamId={StreamId}", eventType, entry.Id);
-                    break;
-            }
+            await _dispatcher.DispatchAsync(
+                eventType, payload, messageId, correlationId, schemaVersion, occurredAtUtc, retryCount, cancellationToken)
+                .ConfigureAwait(false);
 
             await database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entry.Id).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             await HandleFailureAsync(database, entry, ex, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private async Task DispatchAsync<TPayload>(StreamEntry entry, CancellationToken cancellationToken)
-    {
-        var payload = _serializer.Deserialize<TPayload>(GetFieldValue(entry, PayloadField));
-        var occurredAtUtc = DateTime.Parse(
-            GetFieldValue(entry, OccurredAtUtcField),
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.RoundtripKind);
-        var messageId = GetFieldValue(entry, MessageIdField);
-        var eventType = GetFieldValue(entry, EventTypeField);
-        var correlationId = GetFieldValue(entry, CorrelationIdField);
-        var schemaVersion = ParseInt(GetFieldValue(entry, SchemaVersionField));
-        var retryCount = ParseInt(GetFieldValue(entry, RetryCountField));
-
-        var envelope = new IntegrationEventEnvelope<TPayload>(
-            messageId,
-            eventType,
-            occurredAtUtc,
-            correlationId,
-            schemaVersion,
-            payload,
-            retryCount);
-
-        using var scope = _scopeFactory.CreateScope();
-        var handlers = scope.ServiceProvider.GetServices<IIntegrationEventHandler<TPayload>>();
-
-        foreach (var handler in handlers)
-        {
-            if (!string.Equals(handler.EventType, eventType, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            await handler.HandleAsync(envelope, cancellationToken).ConfigureAwait(false);
         }
     }
 
