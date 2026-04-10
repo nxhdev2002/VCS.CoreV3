@@ -15,7 +15,10 @@ public sealed class CompositeOutboxTransportPublisher : IOutboxTransportPublishe
 
     public async Task PublishAsync<TPayload>(IntegrationEvent<TPayload> integrationEvent, CancellationToken cancellationToken = default)
     {
-        await _redis.PublishAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
-        await _kafka.PublishAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
+        if (typeof(TPayload).IsAssignableTo(typeof(IRedisEvent)))
+            await _redis.PublishAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
+
+        if (typeof(TPayload).IsAssignableTo(typeof(IKafkaEvent)))
+            await _kafka.PublishAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
     }
 }

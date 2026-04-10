@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,7 @@ public sealed class RedisStreamConsumerWorker : BackgroundService
 
     public RedisStreamConsumerWorker(
         IConnectionMultiplexer connectionMultiplexer,
-        IIntegrationEventDispatcher dispatcher,
+        [FromKeyedServices("redis")] IIntegrationEventDispatcher dispatcher,
         IOptions<RedisStreamOptions> options,
         ILogger<RedisStreamConsumerWorker> logger)
     {

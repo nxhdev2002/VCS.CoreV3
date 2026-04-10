@@ -52,8 +52,18 @@ public static class ServiceCollectionExtensions
         // Transport: KafkaFlow
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
         services.AddSingleton<KafkaFlowTransportPublisher>();
-        services.AddSingleton<IntegrationEventDispatcher>();
-        services.AddSingleton<IIntegrationEventDispatcher>(sp => sp.GetRequiredService<IntegrationEventDispatcher>());
+
+        // Transport-specific dispatchers (keyed by transport name)
+        services.AddKeyedSingleton<IIntegrationEventDispatcher>("redis", (sp, _) =>
+            new IntegrationEventDispatcher(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<IIntegrationEventSerializer>(),
+                typeof(IRedisEvent)));
+        services.AddKeyedSingleton<IIntegrationEventDispatcher>("kafka", (sp, _) =>
+            new IntegrationEventDispatcher(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<IIntegrationEventSerializer>(),
+                typeof(IKafkaEvent)));
 
         // Composite publisher — dual-publishes to both transports
         services.AddSingleton<IOutboxTransportPublisher>(sp =>

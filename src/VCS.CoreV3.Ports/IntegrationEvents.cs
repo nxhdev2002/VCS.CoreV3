@@ -1,5 +1,11 @@
 namespace VCS.CoreV3.Ports;
 
+/// <summary>Marker interface: event payload is routed through Kafka.</summary>
+public interface IKafkaEvent { }
+
+/// <summary>Marker interface: event payload is routed through Redis Streams.</summary>
+public interface IRedisEvent { }
+
 public sealed record IntegrationEvent<TPayload>(
     string EventType,
     TPayload Payload,

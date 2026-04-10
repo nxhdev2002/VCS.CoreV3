@@ -1,4 +1,5 @@
 using KafkaFlow;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VCS.CoreV3.Infrastructure.Kafka;
 
@@ -6,7 +7,7 @@ public sealed class KafkaIntegrationEventHandler : IMessageHandler<KafkaIntegrat
 {
     private readonly IIntegrationEventDispatcher _dispatcher;
 
-    public KafkaIntegrationEventHandler(IIntegrationEventDispatcher dispatcher)
+    public KafkaIntegrationEventHandler([FromKeyedServices("kafka")] IIntegrationEventDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
     }

@@ -7,11 +7,16 @@ public sealed class IntegrationEventDispatcher : IIntegrationEventDispatcher
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IIntegrationEventSerializer _serializer;
+    private readonly Type? _transportFilter;
 
-    public IntegrationEventDispatcher(IServiceScopeFactory scopeFactory, IIntegrationEventSerializer serializer)
+    public IntegrationEventDispatcher(
+        IServiceScopeFactory scopeFactory,
+        IIntegrationEventSerializer serializer,
+        Type? transportFilter = null)
     {
         _scopeFactory = scopeFactory;
         _serializer = serializer;
+        _transportFilter = transportFilter;
     }
 
     public Task DispatchAsync(
@@ -46,6 +51,9 @@ public sealed class IntegrationEventDispatcher : IIntegrationEventDispatcher
         int retryCount,
         CancellationToken cancellationToken)
     {
+        if (_transportFilter is not null && !typeof(TPayload).IsAssignableTo(_transportFilter))
+            return;
+
         var typedPayload = _serializer.Deserialize<TPayload>(payload);
         var envelope = new IntegrationEventEnvelope<TPayload>(
             messageId, eventType, occurredAtUtc, correlationId, schemaVersion, typedPayload, retryCount);

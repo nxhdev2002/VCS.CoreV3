@@ -74,13 +74,64 @@ public sealed class IntegrationEventDispatcherTests
         Assert.Null(ex);
     }
 
-    private static IntegrationEventDispatcher BuildSut(Action<IServiceCollection> register)
+    [Fact]
+    public async Task DispatchAsync_WithKafkaFilter_SkipsEventNotImplementingIKafkaEvent()
+    {
+        // WeatherForecastRequestedEvent : IRedisEvent (not IKafkaEvent) — should be skipped
+        var handler = new CapturingHandler<WeatherForecastRequestedEvent>(EventTypes.WeatherForecastRequested);
+        var sut = BuildSut(
+            services => services.AddScoped<IIntegrationEventHandler<WeatherForecastRequestedEvent>>(_ => handler),
+            transportFilter: typeof(IKafkaEvent));
+
+        var serializer = new SystemTextJsonIntegrationEventSerializer();
+        var payload = serializer.Serialize(new WeatherForecastRequestedEvent("GET", "/weather"));
+
+        await sut.DispatchAsync(EventTypes.WeatherForecastRequested, payload, "msg-5", "corr-5", 1, DateTime.UtcNow, 0);
+
+        Assert.False(handler.WasInvoked);
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WithRedisFilter_SkipsEventNotImplementingIRedisEvent()
+    {
+        // WeatherForecastGeneratedEvent : IKafkaEvent (not IRedisEvent) — should be skipped
+        var handler = new CapturingHandler<WeatherForecastGeneratedEvent>(EventTypes.WeatherForecastGenerated);
+        var sut = BuildSut(
+            services => services.AddScoped<IIntegrationEventHandler<WeatherForecastGeneratedEvent>>(_ => handler),
+            transportFilter: typeof(IRedisEvent));
+
+        var serializer = new SystemTextJsonIntegrationEventSerializer();
+        var payload = serializer.Serialize(new WeatherForecastGeneratedEvent(5, 22.5));
+
+        await sut.DispatchAsync(EventTypes.WeatherForecastGenerated, payload, "msg-6", "corr-6", 1, DateTime.UtcNow, 0);
+
+        Assert.False(handler.WasInvoked);
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WithKafkaFilter_InvokesHandlerForKafkaEvent()
+    {
+        // WeatherForecastGeneratedEvent : IKafkaEvent — should be dispatched
+        var handler = new CapturingHandler<WeatherForecastGeneratedEvent>(EventTypes.WeatherForecastGenerated);
+        var sut = BuildSut(
+            services => services.AddScoped<IIntegrationEventHandler<WeatherForecastGeneratedEvent>>(_ => handler),
+            transportFilter: typeof(IKafkaEvent));
+
+        var serializer = new SystemTextJsonIntegrationEventSerializer();
+        var payload = serializer.Serialize(new WeatherForecastGeneratedEvent(3, 18.0));
+
+        await sut.DispatchAsync(EventTypes.WeatherForecastGenerated, payload, "msg-7", "corr-7", 1, DateTime.UtcNow, 0);
+
+        Assert.True(handler.WasInvoked);
+    }
+
+    private static IntegrationEventDispatcher BuildSut(Action<IServiceCollection> register, Type? transportFilter = null)
     {
         var services = new ServiceCollection();
         register(services);
         var provider = services.BuildServiceProvider();
         var serializer = new SystemTextJsonIntegrationEventSerializer();
-        return new IntegrationEventDispatcher(provider.GetRequiredService<IServiceScopeFactory>(), serializer);
+        return new IntegrationEventDispatcher(provider.GetRequiredService<IServiceScopeFactory>(), serializer, transportFilter);
     }
 
     private sealed class CapturingHandler<TPayload>(string eventType) : IIntegrationEventHandler<TPayload>
